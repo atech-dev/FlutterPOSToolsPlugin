@@ -38,7 +38,7 @@ import io.flutter.plugin.common.PluginRegistry
 /** FlutterPosToolsPlugin */
 class FlutterPosToolsPlugin: FlutterPlugin, ActivityAware, MethodCallHandler, PluginRegistry.RequestPermissionsResultListener {
   private val TAG = "FlutterPosToolsPlugin"
-  private val REQUEST_CODE = 0
+  private val REQUEST_CODE = 28
   /// The MethodChannel that will the communication between Flutter and native Android
   ///
   /// This local reference serves to register the plugin with the Flutter Engine and unregister it
@@ -53,13 +53,17 @@ class FlutterPosToolsPlugin: FlutterPlugin, ActivityAware, MethodCallHandler, Pl
   }
 
   override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
-    if (call.method == "getPlatformVersion") {
-      result.success("Android ${android.os.Build.VERSION.RELEASE}")
-    } else if (call.method == "getSerialNumber") {
-        handleGetSerialNumber(call, result)
-    } else {
-      result.notImplemented()
-    }
+      if(this::activity.isInitialized) {
+          if (call.method == "getPlatformVersion") {
+              result.success("Android ${android.os.Build.VERSION.RELEASE}")
+          } else if (call.method == "getSerialNumber") {
+              handleGetSerialNumber(call, result)
+          } else {
+              result.notImplemented()
+          }
+      } else {
+          result.notImplemented()
+      }
   }
 
   override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
@@ -102,7 +106,9 @@ class FlutterPosToolsPlugin: FlutterPlugin, ActivityAware, MethodCallHandler, Pl
                     })
                     // You can directly ask for the permission.
                     // The registered ActivityResultCallback gets the result of this request.
-                    activity.requestPermissions(arrayOf(Manifest.permission.READ_PHONE_STATE), REQUEST_CODE);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        activity.requestPermissions(arrayOf(Manifest.permission.READ_PHONE_STATE), REQUEST_CODE)
+                    }
                 }
             }
         } catch(e: Exception) {
@@ -170,21 +176,16 @@ class FlutterPosToolsPlugin: FlutterPlugin, ActivityAware, MethodCallHandler, Pl
             REQUEST_CODE -> {
                 if (hasPermission()) {
 
-                    if(permissionHandler != null) {
-                        permissionHandler.setPermissionStatus(true)
-                    }
+                    permissionHandler.setPermissionStatus(true)
 
                 } else {
                     // not granted
-                    if(permissionHandler != null) {
-                        permissionHandler.setPermissionStatus(false)
-                    }
+                    permissionHandler.setPermissionStatus(false)
                 }
 
                 return true
             }
             else -> permissionHandler.setPermissionStatus(false)
-                // super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         }
         return true
     }
@@ -194,22 +195,14 @@ class FlutterPosToolsPlugin: FlutterPlugin, ActivityAware, MethodCallHandler, Pl
 class PermissionHandler {
     private var listener: PermissionListener? = null
 
-    // Constructor where listener events are ignored
     init {
-        // set null or default listener or accept as argument to constructor
         this.listener = null
     }
 
     interface PermissionListener {
-        // These methods are the different events and
-        // need to pass relevant arguments related to the event triggered
         fun onPermissionResult(status: Boolean)
-
-    // or when data has been loaded
-    // fun onDataLoaded(data: SomeData?)
     }
 
-    // Assign the listener implementing events interface that will receive the events
     fun setPermissionListener(listener: PermissionListener) {
         this.listener = listener
     }
