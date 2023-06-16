@@ -2,16 +2,11 @@ package ao.co.atech.dev.flutter_pos_tools
 
 import android.Manifest
 import android.telephony.TelephonyManager
-// import android.util.Log
-// import androidx.appcompat.app.AppCompatActivity
 import androidx.annotation.NonNull
 
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import java.lang.reflect.Method
-// import androidx.navigation.ui.AppBarConfiguration
-// import androidx.navigation.ui.navigateUp
-// import androidx.navigation.ui.setupActionBarWithNavController
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -78,11 +73,11 @@ class FlutterPosToolsPlugin: FlutterPlugin, ActivityAware, MethodCallHandler, Pl
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
-        // no op
+        onDetachedFromActivity();
     }
 
     override fun onDetachedFromActivity() {
-        // no op
+        channel.setMethodCallHandler(null)
     }
 
     private fun handleGetSerialNumber(call: MethodCall, result: Result) {
