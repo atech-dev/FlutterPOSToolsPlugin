@@ -32,56 +32,65 @@ import io.flutter.plugin.common.PluginRegistry
 
 /** FlutterPosToolsPlugin */
 class FlutterPosToolsPlugin: FlutterPlugin, ActivityAware, MethodCallHandler, PluginRegistry.RequestPermissionsResultListener {
+
   private val TAG = "FlutterPosToolsPlugin"
-  private val REQUEST_CODE = 28
-  /// The MethodChannel that will the communication between Flutter and native Android
-  ///
-  /// This local reference serves to register the plugin with the Flutter Engine and unregister it
-  /// when the Flutter Engine is detached from the Activity
+  private val REQUEST_CODE = 100
+  
   private lateinit var channel : MethodChannel
   private lateinit var activity: Activity
   private lateinit var permissionHandler: PermissionHandler
+  private lateinit var activityBinding: ActivityPluginBinding;
 
-  override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-    channel = MethodChannel(flutterPluginBinding.binaryMessenger, "flutter_pos_tools")
-    channel.setMethodCallHandler(this)
-  }
+    override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+        channel = MethodChannel(flutterPluginBinding.binaryMessenger, "flutter_pos_tools")
+        channel.setMethodCallHandler(this)
+    }
 
-  override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
-      if(this::activity.isInitialized) {
-          if (call.method == "getPlatformVersion") {
-              result.success("Android ${android.os.Build.VERSION.RELEASE}")
-          } else if (call.method == "getSerialNumber") {
-              handleGetSerialNumber(call, result)
-          } else {
-              result.notImplemented()
-          }
-      } else {
-          result.notImplemented()
-      }
-  }
-
-  override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
-    channel.setMethodCallHandler(null)
-  }
+    override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
+        channel.setMethodCallHandler(null)
+    }
 
     override fun onAttachedToActivity(@NonNull activityPluginBinding: ActivityPluginBinding) {
-        activity = activityPluginBinding.getActivity();
+        activityBinding = activityPluginBinding;
+        activity = activityBinding.getActivity();
 
         permissionHandler = PermissionHandler();
-        activityPluginBinding.addRequestPermissionsResultListener(this);
+        activityBinding.addRequestPermissionsResultListener(this);
     }
 
     override fun onReattachedToActivityForConfigChanges(@NonNull activityPluginBinding: ActivityPluginBinding) {
-        onAttachedToActivity(activityPluginBinding);
+        activityBinding = activityPluginBinding;
+        activity = activityBinding.getActivity();
+
+        permissionHandler = PermissionHandler();
+        activityBinding.addRequestPermissionsResultListener(this);
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
-        onDetachedFromActivity();
+        activityBinding.removeRequestPermissionsResultListener(this);
+        activityBinding = null;
+        activity = null;
     }
 
     override fun onDetachedFromActivity() {
-        channel.setMethodCallHandler(null)
+        activityBinding.removeRequestPermissionsResultListener(this);
+        activityBinding = null;
+        activity = null;
+    }
+
+    override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
+        if (call.method == "getPlatformVersion") {
+            result.success("Android ${android.os.Build.VERSION.RELEASE}")
+        } else if (call.method == "getSerialNumber") {
+            if (activity == null) {
+                Log.e(TAG, "getSerialNumber, activity is null");
+                result.error(null, "getSerialNumber, activity is null", null);
+                return;
+            }
+            handleGetSerialNumber(call, result)
+        } else {
+            result.notImplemented()
+        }
     }
 
     private fun handleGetSerialNumber(call: MethodCall, result: Result) {
@@ -177,10 +186,8 @@ class FlutterPosToolsPlugin: FlutterPlugin, ActivityAware, MethodCallHandler, Pl
                     // not granted
                     permissionHandler.setPermissionStatus(false)
                 }
-
-                return true
             }
-            else -> permissionHandler.setPermissionStatus(false)
+            // else -> permissionHandler.setPermissionStatus(false)
         }
         return true
     }
