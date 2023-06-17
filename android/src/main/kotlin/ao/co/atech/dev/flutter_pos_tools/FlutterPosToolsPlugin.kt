@@ -18,6 +18,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.ResultReceiver
+// import android.util.Log
 
 import io.flutter.Log
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -39,7 +40,7 @@ class FlutterPosToolsPlugin: FlutterPlugin, ActivityAware, MethodCallHandler, Pl
   private lateinit var channel : MethodChannel
   private lateinit var activity: Activity
   private lateinit var permissionHandler: PermissionHandler
-  private lateinit var activityBinding: ActivityPluginBinding;
+  private lateinit var activityBinding: ActivityPluginBinding
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "flutter_pos_tools")
@@ -52,41 +53,39 @@ class FlutterPosToolsPlugin: FlutterPlugin, ActivityAware, MethodCallHandler, Pl
 
     override fun onAttachedToActivity(@NonNull activityPluginBinding: ActivityPluginBinding) {
         activityBinding = activityPluginBinding;
-        activity = activityBinding.getActivity();
+        activity = activityPluginBinding.getActivity();
 
         permissionHandler = PermissionHandler();
-        activityBinding.addRequestPermissionsResultListener(this);
+        activityPluginBinding.addRequestPermissionsResultListener(this);
     }
 
     override fun onReattachedToActivityForConfigChanges(@NonNull activityPluginBinding: ActivityPluginBinding) {
         activityBinding = activityPluginBinding;
-        activity = activityBinding.getActivity();
+        activity = activityPluginBinding.getActivity();
 
         permissionHandler = PermissionHandler();
-        activityBinding.addRequestPermissionsResultListener(this);
+        activityPluginBinding.addRequestPermissionsResultListener(this);
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
         activityBinding.removeRequestPermissionsResultListener(this);
-        activityBinding = null;
-        activity = null;
+        // activityBinding = null;
+        // activity = null;
     }
 
     override fun onDetachedFromActivity() {
         activityBinding.removeRequestPermissionsResultListener(this);
-        activityBinding = null;
-        activity = null;
+        // activityBinding = null;
+        // activity = null;
     }
 
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
         if (call.method == "getPlatformVersion") {
             result.success("Android ${android.os.Build.VERSION.RELEASE}")
         } else if (call.method == "getSerialNumber") {
-            if (activity == null) {
-                Log.e(TAG, "getSerialNumber, activity is null");
-                result.error(null, "getSerialNumber, activity is null", null);
-                return;
-            }
+            // Log.e(TAG, "getSerialNumber, activity is null");
+            // result.error(null, "getSerialNumber, activity is null", null);
+            // return;
             handleGetSerialNumber(call, result)
         } else {
             result.notImplemented()
@@ -100,6 +99,7 @@ class FlutterPosToolsPlugin: FlutterPlugin, ActivityAware, MethodCallHandler, Pl
                 else -> {
                     permissionHandler.setPermissionListener(object : PermissionHandler.PermissionListener {
                         override fun onPermissionResult(status: Boolean) {
+                            Log.e(TAG, "EPAH 1")
                             if(status) {
                                 getSerialNumber(result)
                             } else {
@@ -111,6 +111,7 @@ class FlutterPosToolsPlugin: FlutterPlugin, ActivityAware, MethodCallHandler, Pl
                     // You can directly ask for the permission.
                     // The registered ActivityResultCallback gets the result of this request.
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        Log.e(TAG, "REQUEST IT")
                         activity.requestPermissions(arrayOf(Manifest.permission.READ_PHONE_STATE), REQUEST_CODE)
                     }
                 }
@@ -130,6 +131,11 @@ class FlutterPosToolsPlugin: FlutterPlugin, ActivityAware, MethodCallHandler, Pl
     }
 
     private fun getSerialNumber(result: Result) {
+        /*if(activity == null) {
+            result.error("SERIAL NUMBER ERROR", "Impossible to get serial number, no activity", null)
+            return;
+        }*/
+
         val telephonyManager = activity.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
         var serialNumber: String?
 
@@ -163,6 +169,7 @@ class FlutterPosToolsPlugin: FlutterPlugin, ActivityAware, MethodCallHandler, Pl
         if(serialNumber == null) {
             result.error("SERIAL NUMBER ERROR", "Impossible to get serial number", null)
         } else {
+            Log.e(TAG, "getSerialNumber, activity is null");
             result.success(serialNumber)
         }
     }
@@ -176,6 +183,7 @@ class FlutterPosToolsPlugin: FlutterPlugin, ActivityAware, MethodCallHandler, Pl
         permissions: Array<out String>,
         grantResults: IntArray
     ): Boolean {
+        Log.e(TAG, "EPAH")
         when (requestCode) {
             REQUEST_CODE -> {
                 if (hasPermission()) {
@@ -187,7 +195,7 @@ class FlutterPosToolsPlugin: FlutterPlugin, ActivityAware, MethodCallHandler, Pl
                     permissionHandler.setPermissionStatus(false)
                 }
             }
-            // else -> permissionHandler.setPermissionStatus(false)
+            else -> permissionHandler.setPermissionStatus(false)
         }
         return true
     }
