@@ -17,6 +17,6 @@ class MethodChannelFlutterPosTools extends FlutterPosToolsPlatform {
 
   @override
   Future<String?> getSerialNumber() async {
-    return await methodChannel.invokeMethod<String>('getSerialNumber');
+    return await methodChannel.invokeMethod<String?>('getSerialNumber');
   }
 }

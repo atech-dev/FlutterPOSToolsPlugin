@@ -10,6 +10,12 @@ class MockFlutterPosToolsPlatform
 
   @override
   Future<String?> getPlatformVersion() => Future.value('42');
+
+  @override
+  Future<String?> getSerialNumber() {
+    // TODO: implement getSerialNumber
+    throw UnimplementedError();
+  }
 }
 
 void main() {
