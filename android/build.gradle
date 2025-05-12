@@ -25,6 +25,7 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 android {
+    namespace 'ao.co.atech.dev.flutter_pos_tools'
     compileSdkVersion 31
 
     compileOptions {
